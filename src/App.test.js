@@ -1,30 +1,49 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { BrowserRouter } from 'react-router-dom';
-import App from './App';
-import BookingForm from './components/BookingForm';
-import Header from './components/Header';
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import BookingForm from "./components/BookingForm";
 
-test('Renders the Header heading', () => {
-    render(<BrowserRouter><App /></BrowserRouter>);
-    const headingElement = screen.getByText("Reserve Table");
+// Mock props with available times
+const mockProps = {
+  availableTimes: ["09:00 AM", "10:00 AM", "11:00 AM"],
+  SubmitFrom: jest.fn(),
+  dispatch: jest.fn(),
+};
+
+describe("BookingForm component", () => {
+  test("Renders the BookingForm heading", () => {
+    render(<BookingForm />);
+    const headingElement = screen.getByText("Book Now", { exact: false });
     expect(headingElement).toBeInTheDocument();
+  });
 
-    const reserveButton = screen.getByRole("button");
-    fireEvent.click(reserveButton);
+  test("Renders form elements and submits form with correct data", () => {
+    render(<BookingForm {...mockProps} />);
 
-    const headingElementNew = screen.getByText("Choose Date");
-    expect(headingElementNew).toBeInTheDocument();
-})
+    // Check if the submit button is rendered
+    const submitButton = screen.getByLabelText("On Click");
+    expect(submitButton).toBeInTheDocument();
 
-test('Initialize/Update Times', () => {
-  render(<BrowserRouter><App /></BrowserRouter>);
-  const reserveButton = screen.getByRole("button");
-  fireEvent.click(reserveButton);
+    // Simulate filling in the date input
+    const dateInput = screen.getByLabelText(/choose date/i);
+    fireEvent.change(dateInput, { target: { value: "2024-04-10" } });
 
-  const testTime = []
-  // userEvent.selectOptions(screen.getByLabelText("Choose Time"),screen.getByRole('option', { name: testTime}))
-  // expect(screen.getByRole('option', { name: testTime}).selected).toBe(true);
+    // Simulate selecting a time
+    const timeSelect = screen.getByLabelText(/choose time/i);
+    fireEvent.change(timeSelect, { target: { value: "09:00 AM" } });
 
+    // Simulate filling in the guest input
+    const guestsInput = screen.getByLabelText(/number of guests/i);
+    fireEvent.change(guestsInput, { target: { value: "2" } });
 
-})
+    // Simulate selecting an occasion
+    const occasionSelect = screen.getByLabelText(/occasion/i);
+    fireEvent.change(occasionSelect, { target: { value: "Birthday" } });
+
+    // Simulate form submission
+    fireEvent.click(submitButton);
+
+    // Check if SubmitFrom function is called with the correct arguments
+    expect(mockProps.SubmitFrom).toHaveBeenCalledTimes(1);
+    expect(mockProps.SubmitFrom).toHaveBeenCalledWith(expect.any(Object));
+  });
+});
